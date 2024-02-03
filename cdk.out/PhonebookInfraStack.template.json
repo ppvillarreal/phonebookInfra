@@ -43,7 +43,7 @@
      "CodeRepository": {
       "CodeConfiguration": {
        "CodeConfigurationValues": {
-        "Port": "3000",
+        "Port": "3001",
         "Runtime": "NODEJS_14",
         "StartCommand": "npm start"
        },

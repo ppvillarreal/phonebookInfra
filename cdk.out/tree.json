@@ -82,7 +82,7 @@
                         "codeConfiguration": {
                           "configurationSource": "API",
                           "codeConfigurationValues": {
-                            "port": "3000",
+                            "port": "3001",
                             "runtime": "NODEJS_14",
                             "startCommand": "npm start"
                           }
