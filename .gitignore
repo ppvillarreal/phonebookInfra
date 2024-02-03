@@ -1,0 +1,40 @@
+# CDK specific
+.cdk.staging/
+.cdk.context.json
+.cdk.out/
+cdk.context.json
+cdk.out/
+
+# Node.js specific
+node_modules/
+*.log
+*.swp
+
+# Python specific
+__pycache__/
+*.pyc
+*.pyo
+*.pyc/
+*.pyo/
+
+# Java specific
+target/
+*.class
+.idea/
+
+# TypeScript specific
+dist/
+*.js
+*.js.map
+
+# macOS specific
+.DS_Store
+
+# Visual Studio Code specific
+.vscode/
+*.code-workspace
+*.code-workspace-shm
+*.code-workspace-wal
+
+# Others
+yarn-error.log
