@@ -1,0 +1,172 @@
+{
+  "version": "tree-0.1",
+  "tree": {
+    "id": "App",
+    "path": "",
+    "children": {
+      "PhonebookInfraStack": {
+        "id": "PhonebookInfraStack",
+        "path": "PhonebookInfraStack",
+        "children": {
+          "Service": {
+            "id": "Service",
+            "path": "PhonebookInfraStack/Service",
+            "children": {
+              "InstanceRole": {
+                "id": "InstanceRole",
+                "path": "PhonebookInfraStack/Service/InstanceRole",
+                "children": {
+                  "ImportInstanceRole": {
+                    "id": "ImportInstanceRole",
+                    "path": "PhonebookInfraStack/Service/InstanceRole/ImportInstanceRole",
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.Resource",
+                      "version": "2.125.0"
+                    }
+                  },
+                  "Resource": {
+                    "id": "Resource",
+                    "path": "PhonebookInfraStack/Service/InstanceRole/Resource",
+                    "attributes": {
+                      "aws:cdk:cloudformation:type": "AWS::IAM::Role",
+                      "aws:cdk:cloudformation:props": {
+                        "assumeRolePolicyDocument": {
+                          "Statement": [
+                            {
+                              "Action": "sts:AssumeRole",
+                              "Effect": "Allow",
+                              "Principal": {
+                                "Service": "tasks.apprunner.amazonaws.com"
+                              }
+                            }
+                          ],
+                          "Version": "2012-10-17"
+                        }
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_iam.CfnRole",
+                      "version": "2.125.0"
+                    }
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.aws_iam.Role",
+                  "version": "2.125.0"
+                }
+              },
+              "Resource": {
+                "id": "Resource",
+                "path": "PhonebookInfraStack/Service/Resource",
+                "attributes": {
+                  "aws:cdk:cloudformation:type": "AWS::AppRunner::Service",
+                  "aws:cdk:cloudformation:props": {
+                    "instanceConfiguration": {
+                      "instanceRoleArn": {
+                        "Fn::GetAtt": [
+                          "ServiceInstanceRoleDFA90CEC",
+                          "Arn"
+                        ]
+                      }
+                    },
+                    "networkConfiguration": {
+                      "egressConfiguration": {
+                        "egressType": "DEFAULT"
+                      }
+                    },
+                    "sourceConfiguration": {
+                      "authenticationConfiguration": {
+                        "connectionArn": "arn:aws:apprunner:us-west-2:656805403368:connection/Github-ppvillarreal/149a900acde445208d8dbf9d89c67d38"
+                      },
+                      "codeRepository": {
+                        "codeConfiguration": {
+                          "configurationSource": "API",
+                          "codeConfigurationValues": {
+                            "port": "3000",
+                            "runtime": "NODEJS_14",
+                            "startCommand": "npm start"
+                          }
+                        },
+                        "repositoryUrl": "https://github.com/ppvillarreal/phonebookApp/tree/main/backend",
+                        "sourceCodeVersion": {
+                          "type": "BRANCH",
+                          "value": "main"
+                        }
+                      }
+                    }
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.aws_apprunner.CfnService",
+                  "version": "2.125.0"
+                }
+              }
+            },
+            "constructInfo": {
+              "fqn": "@aws-cdk/aws-apprunner-alpha.Service",
+              "version": "2.125.0-alpha.0"
+            }
+          },
+          "CDKMetadata": {
+            "id": "CDKMetadata",
+            "path": "PhonebookInfraStack/CDKMetadata",
+            "children": {
+              "Default": {
+                "id": "Default",
+                "path": "PhonebookInfraStack/CDKMetadata/Default",
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.CfnResource",
+                  "version": "2.125.0"
+                }
+              },
+              "Condition": {
+                "id": "Condition",
+                "path": "PhonebookInfraStack/CDKMetadata/Condition",
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.CfnCondition",
+                  "version": "2.125.0"
+                }
+              }
+            },
+            "constructInfo": {
+              "fqn": "constructs.Construct",
+              "version": "10.3.0"
+            }
+          },
+          "BootstrapVersion": {
+            "id": "BootstrapVersion",
+            "path": "PhonebookInfraStack/BootstrapVersion",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.CfnParameter",
+              "version": "2.125.0"
+            }
+          },
+          "CheckBootstrapVersion": {
+            "id": "CheckBootstrapVersion",
+            "path": "PhonebookInfraStack/CheckBootstrapVersion",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.CfnRule",
+              "version": "2.125.0"
+            }
+          }
+        },
+        "constructInfo": {
+          "fqn": "aws-cdk-lib.Stack",
+          "version": "2.125.0"
+        }
+      },
+      "Tree": {
+        "id": "Tree",
+        "path": "Tree",
+        "constructInfo": {
+          "fqn": "constructs.Construct",
+          "version": "10.3.0"
+        }
+      }
+    },
+    "constructInfo": {
+      "fqn": "aws-cdk-lib.App",
+      "version": "2.125.0"
+    }
+  }
+}

@@ -11,7 +11,7 @@ export class PhonebookInfraStack extends cdk.Stack {
     
     new apprunner.Service(this, 'Service', {
       source: apprunner.Source.fromGitHub({
-        repositoryUrl: 'https://github.com/phonebookApp/backend',
+        repositoryUrl: 'https://github.com/ppvillarreal/phonebookApp/tree/main/backend',
         branch: 'main',
         configurationSource: apprunner.ConfigurationSourceType.API,
         codeConfigurationValues: {

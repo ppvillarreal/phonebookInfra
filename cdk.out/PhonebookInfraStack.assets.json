@@ -1,0 +1,19 @@
+{
+  "version": "36.0.0",
+  "files": {
+    "baf1b428da154be56947adda471a90345017bb22351459b43d7e5b433c2ec25a": {
+      "source": {
+        "path": "PhonebookInfraStack.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-current_region": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "baf1b428da154be56947adda471a90345017bb22351459b43d7e5b433c2ec25a.json",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}
