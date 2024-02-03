@@ -16,7 +16,7 @@ export class PhonebookInfraStack extends cdk.Stack {
         configurationSource: apprunner.ConfigurationSourceType.API,
         codeConfigurationValues: {
           runtime: apprunner.Runtime.NODEJS_14,
-          port: '3000',
+          port: '3001',
           startCommand: 'npm start',
         },
         connection: apprunner.GitHubConnection.fromConnectionArn('arn:aws:apprunner:us-west-2:656805403368:connection/Github-ppvillarreal/149a900acde445208d8dbf9d89c67d38'),
