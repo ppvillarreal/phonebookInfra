@@ -47,6 +47,7 @@ export class PhonebookInfraStack extends cdk.Stack {
     // Add environment variables to connect to DynamoDB
     service.addEnvironmentVariable("DYNAMODB_TABLE_NAME", table.tableName)
     service.addEnvironmentVariable("DYNAMODB_TABLE_ARN", table.tableArn)
+    service.addEnvironmentVariable("SERVICE_REGION", cdk.Stack.of(this).region)
 
     // Optionally, output the DynamoDB table name and ARN
     new cdk.CfnOutput(this, 'TableName', {
@@ -55,6 +56,14 @@ export class PhonebookInfraStack extends cdk.Stack {
 
     new cdk.CfnOutput(this, 'TableArn', {
       value: table.tableArn,
+    });
+
+    new cdk.CfnOutput(this, 'Region', {
+      value: cdk.Stack.of(this).region,
+    });
+
+    new cdk.CfnOutput(this, 'AppRunnerServiceURL', {
+      value: service.serviceUrl,
     });
   }
 }
