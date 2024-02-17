@@ -10,6 +10,7 @@ export class PhonebookInfraStack extends cdk.Stack {
 
     // Create a DynamoDB table
     const table = new Table(this, 'PhonebookTable', {
+      tableName: 'phonebookContacts', 
       partitionKey: { name: 'id', type: AttributeType.STRING },
       billingMode: BillingMode.PAY_PER_REQUEST, // Use on-demand billing mode
     });
