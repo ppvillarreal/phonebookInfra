@@ -34,7 +34,7 @@ export class PhonebookInfraStack extends cdk.Stack {
         branch: environmentConfig.appRunnerBranch,
         configurationSource: apprunner.ConfigurationSourceType.API,
         codeConfigurationValues: {
-          runtime: apprunner.Runtime[environmentConfig.appRunnerRuntime],
+          runtime: environmentConfig.appRunnerRuntime,
           port: environmentConfig.appRunnerPort,
           startCommand: environmentConfig.appRunnerStartCommand,
           buildCommand: environmentConfig.appRunnerBuildCommand,
