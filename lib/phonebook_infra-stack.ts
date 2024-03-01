@@ -3,6 +3,7 @@ import { Construct } from 'constructs';
 import * as apprunner from '@aws-cdk/aws-apprunner-alpha'; 
 import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb'; 
 import { Role, ServicePrincipal, PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import { environmentConfig } from './config';
 
 export class PhonebookInfraStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -10,7 +11,7 @@ export class PhonebookInfraStack extends cdk.Stack {
 
     // Create a DynamoDB table
     const table = new Table(this, 'PhonebookTable', {
-      tableName: 'phonebookContacts', 
+      tableName: environmentConfig.dynamoDbTableName, 
       partitionKey: { name: 'id', type: AttributeType.STRING },
       billingMode: BillingMode.PAY_PER_REQUEST, // Use on-demand billing mode
     });
@@ -29,16 +30,16 @@ export class PhonebookInfraStack extends cdk.Stack {
     // Create the App Runner service
     const service = new apprunner.Service(this, 'Service', {
       source: apprunner.Source.fromGitHub({
-        repositoryUrl: 'https://github.com/ppvillarreal/phonebookApp',
-        branch: 'main',
+        repositoryUrl: environmentConfig.appRunnerRepositoryUrl,
+        branch: environmentConfig.appRunnerBranch,
         configurationSource: apprunner.ConfigurationSourceType.API,
         codeConfigurationValues: {
-          runtime: apprunner.Runtime.NODEJS_14,
-          port: '3001',
-          startCommand: 'npm start',
-          buildCommand: 'npm install && npm run build',
+          runtime: apprunner.Runtime[environmentConfig.appRunnerRuntime],
+          port: environmentConfig.appRunnerPort,
+          startCommand: environmentConfig.appRunnerStartCommand,
+          buildCommand: environmentConfig.appRunnerBuildCommand,
         },
-        connection: apprunner.GitHubConnection.fromConnectionArn('arn:aws:apprunner:us-west-2:656805403368:connection/Github-ppvillarreal/149a900acde445208d8dbf9d89c67d38'),
+        connection: apprunner.GitHubConnection.fromConnectionArn(environmentConfig.appRunnerConnectionArn),
       }),
       // Associate the IAM role with the App Runner service
       instanceRole: appRunnerRole,
