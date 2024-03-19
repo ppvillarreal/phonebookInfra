@@ -1,9 +1,14 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+import { Stack } from '@aws-cdk/core';
 import * as apprunner from '@aws-cdk/aws-apprunner-alpha'; 
 import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb'; 
 import { Role, ServicePrincipal, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { environmentConfig } from './config';
+import * as ecr from '@aws-cdk/aws-ecr';
+import { RemovalPolicy } from '@aws-cdk/core';
+import * as iam from '@aws-cdk/aws-iam';
+
 
 export class PhonebookInfraStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -27,19 +32,34 @@ export class PhonebookInfraStack extends cdk.Stack {
     // This is not meant for production, so we will let table be destroyed
     table.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY);
 
+    // Create ECR Repository
+    const ecrRepository = new ecr.Repository(Stack.of(this), 'PhonebookRepository', {
+      removalPolicy: RemovalPolicy.DESTROY, // Optional: This sets the removal policy for the ECR repository
+    });
+
+    // Define an IAM role for GitHub Actions
+    const githubActionsRole = new iam.Role(Stack.of(this), 'GitHubActionsRole', {
+      assumedBy: new iam.ServicePrincipal('{NEED TO DEFINE THIS - Maybe simpler to just create a user despite more unsafe}'),
+    });
+
+    // Attach a policy to the IAM role that allows pushing images to the ECR repository
+    githubActionsRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryFullAccess'));
+
+    // Output the ECR repository URI
+    new cdk.CfnOutput(this, 'RepositoryUri', {
+      value: ecrRepository.repositoryUri,
+    });
+
+    // Output the IAM role ARN for GitHub Actions
+    new cdk.CfnOutput(this, 'GitHubActionsRoleArn', {
+      value: githubActionsRole.roleArn,
+    });
+
     // Create the App Runner service
     const service = new apprunner.Service(this, 'Service', {
-      source: apprunner.Source.fromGitHub({
-        repositoryUrl: environmentConfig.appRunnerRepositoryUrl,
-        branch: environmentConfig.appRunnerBranch,
-        configurationSource: apprunner.ConfigurationSourceType.API,
-        codeConfigurationValues: {
-          runtime: environmentConfig.appRunnerRuntime,
-          port: environmentConfig.appRunnerPort,
-          startCommand: environmentConfig.appRunnerStartCommand,
-          buildCommand: environmentConfig.appRunnerBuildCommand,
-        },
-        connection: apprunner.GitHubConnection.fromConnectionArn(environmentConfig.appRunnerConnectionArn),
+      source: apprunner.Source.fromEcrPublic({
+        imageConfiguration: { port: 8000 },
+        imageIdentifier: 'public.ecr.aws/aws-containers/hello-app-runner:latest',
       }),
       // Associate the IAM role with the App Runner service
       instanceRole: appRunnerRole,
