@@ -9,4 +9,5 @@ export const environmentConfig = {
     appRunnerPort: '3001',
     appRunnerStartCommand: 'npm start',
     appRunnerBuildCommand: 'npm install && npm run build',
+    appGithubRepo: 'ppvillarreal/phonebookApp'
   };
