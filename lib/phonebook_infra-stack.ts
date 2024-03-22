@@ -31,21 +31,27 @@ export class PhonebookInfraStack extends cdk.Stack {
     });
 
     // Define an IAM role for GitHub Actions
+    const oidcProvider = new iam.OpenIdConnectProvider(this, 'GitHubOidcProvider', {
+      url: 'https://token.actions.githubusercontent.com',
+      clientIds: ['sts.amazonaws.com'],
+    });
+
     const githubActionsRole = new iam.Role(this, 'GitHubActionsRole', {
       assumedBy: new iam.FederatedPrincipal(
-        'oidc-provider/token.actions.githubusercontent.com',
+        oidcProvider.openIdConnectProviderArn, // Use the ARN of the OIDC provider
         {
           StringEquals: {
             'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
-            'token.actions.githubusercontent.com:sub': `repo:${environmentConfig.appGithubRepo}`
-          }
+            'token.actions.githubusercontent.com:sub': `repo:${environmentConfig.appGithubRepo}`,
+          },
         },
         'sts:AssumeRoleWithWebIdentity'
-      )
+      ),
+      // Attach the managed policy for ECR full access
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryFullAccess'),
+      ],
     });
-
-    // Attach a policy to the IAM role that allows pushing images to the ECR repository
-    githubActionsRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryFullAccess'));
 
     // Create the Fargate ECS Service
     const vpc = new Vpc(this, 'PhonebookAppVpc', {
