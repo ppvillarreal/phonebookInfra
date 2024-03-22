@@ -1,44 +1,40 @@
-import * as cdk from '@aws-cdk/core';
-import { Construct, RemovalPolicy } from '@aws-cdk/core';
-import * as ec2 from '@aws-cdk/aws-ec2';
-import { Vpc, SubnetType } from '@aws-cdk/aws-ec2';
-import * as ecs from '@aws-cdk/aws-ecs';
-import { Cluster } from '@aws-cdk/aws-ecs';
-import { Table, AttributeType, BillingMode } from '@aws-cdk/aws-dynamodb'; 
-import { Role, ServicePrincipal } from '@aws-cdk/aws-iam'; 
+import { Stack, RemovalPolicy, CfnOutput, Duration, StackProps} from 'aws-cdk-lib';
+import { Construct } from 'constructs';
+import { Repository } from 'aws-cdk-lib/aws-ecr';
+import { Role, ServicePrincipal, OpenIdConnectProvider, FederatedPrincipal, ManagedPolicy } from 'aws-cdk-lib/aws-iam';
+import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb';
+import { Vpc, SubnetType, SecurityGroup, Peer, Port } from 'aws-cdk-lib/aws-ec2';
+import { Cluster, FargateTaskDefinition, ContainerImage, Protocol, FargateService } from 'aws-cdk-lib/aws-ecs';
+import { ApplicationLoadBalancer} from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { environmentConfig } from './config';
-import * as ecr from '@aws-cdk/aws-ecr';
-import * as iam from '@aws-cdk/aws-iam';
-import * as elbv2 from '@aws-cdk/aws-elasticloadbalancingv2';
 
-export class PhonebookInfraStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+export class PhonebookInfraStack extends Stack {
+  constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
     // Create a DynamoDB table
     const table = new Table(this, 'PhonebookTable', {
       tableName: environmentConfig.dynamoDbTableName,
       partitionKey: { name: 'id', type: AttributeType.STRING },
-      billingMode: BillingMode.PAY_PER_REQUEST, // Use on-demand billing mode
+      billingMode: BillingMode.PAY_PER_REQUEST,
     });
 
-    // This is not meant for production, so we will let table be destroyed
     table.applyRemovalPolicy(RemovalPolicy.DESTROY);
 
     // Create ECR Repository
-    const ecrRepository = new ecr.Repository(this, 'PhonebookRepository', {
-      removalPolicy: RemovalPolicy.DESTROY, // Optional: This sets the removal policy for the ECR repository
+    const ecrRepository = new Repository(this, 'PhonebookRepository', {
+      removalPolicy: RemovalPolicy.DESTROY,
     });
 
     // Define an IAM role for GitHub Actions
-    const oidcProvider = new iam.OpenIdConnectProvider(this, 'GitHubOidcProvider', {
+    const oidcProvider = new OpenIdConnectProvider(this, 'GitHubOidcProvider', {
       url: 'https://token.actions.githubusercontent.com',
       clientIds: ['sts.amazonaws.com'],
     });
 
-    const githubActionsRole = new iam.Role(this, 'GitHubActionsRole', {
-      assumedBy: new iam.FederatedPrincipal(
-        oidcProvider.openIdConnectProviderArn, // Use the ARN of the OIDC provider
+    const githubActionsRole = new Role(this, 'GitHubActionsRole', {
+      assumedBy: new FederatedPrincipal(
+        oidcProvider.openIdConnectProviderArn,
         {
           StringEquals: {
             'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
@@ -47,107 +43,87 @@ export class PhonebookInfraStack extends cdk.Stack {
         },
         'sts:AssumeRoleWithWebIdentity'
       ),
-      // Attach the managed policy for ECR full access
       managedPolicies: [
-        iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryFullAccess'),
+        ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryFullAccess'),
       ],
     });
 
     // Create the Fargate ECS Service
     const vpc = new Vpc(this, 'PhonebookAppVpc', {
-      maxAzs: 2, // Max Availability Zones
+      maxAzs: 2,
     });
 
     const cluster = new Cluster(this, 'MyCluster', {
       vpc,
     });
 
-    const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition', {
+    const taskDefinition = new FargateTaskDefinition(this, 'TaskDefinition', {
       memoryLimitMiB: 512,
       cpu: 256,
     });
 
-    // Add containers, environment variables, etc., to the task definition
     taskDefinition.addContainer('MyContainer', {
-      image: ecs.ContainerImage.fromRegistry('nginx'),
-      environment:{
+      image: ContainerImage.fromRegistry('nginx'),
+      environment: {
         "DYNAMODB_TABLE_NAME": table.tableName,
         "DYNAMODB_TABLE_ARN": table.tableArn,
-        "SERVICE_REGION": cdk.Stack.of(this).region
+        "SERVICE_REGION": this.region
       },
       command: ['echo', 'Hello, world!'],
       portMappings: [
         {
-          containerPort: 80,  // The port your container listens on
-          protocol: ecs.Protocol.TCP,  // The protocol (TCP or UDP)
+          containerPort: 80,
+          protocol: Protocol.TCP,
         }
       ]
     });
 
-    const service = new ecs.FargateService(this, 'Service', {
+    const service = new FargateService(this, 'Service', {
       cluster,
       taskDefinition,
     });
 
-    // Create an IAM role for Fargate container
-    const PhonebookDDBAccessRole = new Role(this, 'PhonebookDDBAccessRole', {
+    const phonebookDDBAccessRole = new Role(this, 'PhonebookDDBAccessRole', {
       assumedBy: new ServicePrincipal('ecs-tasks.amazonaws.com'),
       description: 'Allows container service to access DynamoDB',
     });
 
-    // Grant the role permissions to access the DynamoDB table
-    table.grantReadWriteData(PhonebookDDBAccessRole);    
+    table.grantReadWriteData(phonebookDDBAccessRole);
 
-    // Create a security group for the ALB
-    const albSecurityGroup = new ec2.SecurityGroup(this, 'ALBSecurityGroup', {
+    const albSecurityGroup = new SecurityGroup(this, 'ALBSecurityGroup', {
       vpc,
       securityGroupName: 'ALBSecurityGroup',
       description: 'Allow inbound traffic to ALB',
     });
 
-    albSecurityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(80), 'Allow inbound HTTP traffic');
+    albSecurityGroup.addIngressRule(Peer.anyIpv4(), Port.tcp(80), 'Allow inbound HTTP traffic');
 
-    // Define the ALB
-    const alb = new elbv2.ApplicationLoadBalancer(this, 'ALB', {
+    const alb = new ApplicationLoadBalancer(this, 'ALB', {
       vpc,
-      internetFacing: true, // Expose the ALB to the internet
+      internetFacing: true,
       securityGroup: albSecurityGroup,
     });
 
-    // Define a listener for the ALB
     const listener = alb.addListener('Listener', {
       port: 80,
       open: true,
     });
 
-    // Create a target group for the ALB
     const targetGroup = listener.addTargets('ECSFargateService', {
       port: 80,
       targets: [service],
       healthCheck: {
         path: '/',
-        interval: cdk.Duration.seconds(30),
+        interval: Duration.seconds(30),
       },
     });
 
-    // Output the ECR repository URI
-    new cdk.CfnOutput(this, 'RepositoryUri', {
+    new CfnOutput(this, 'RepositoryUri', {
       value: ecrRepository.repositoryUri,
     });
 
-    // Output the ALB DNS name
-    new cdk.CfnOutput(this, 'ALBDNSName', {
+    new CfnOutput(this, 'ALBDNSName', {
       value: alb.loadBalancerDnsName,
     });
-
-    new cdk.CfnOutput(this, 'Region', {
-      value: cdk.Stack.of(this).region,
-    });    
-
-    // Output the IAM role ARN for GitHub Actions
-    new cdk.CfnOutput(this, 'GitHubActionsRoleArn', {
-      value: githubActionsRole.roleArn,
-    });
-
   }
 }
