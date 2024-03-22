@@ -143,9 +143,5 @@ export class PhonebookInfraStack extends cdk.Stack {
       value: githubActionsRole.roleArn,
     });
 
-    new cdk.CfnOutput(this, 'Region', {
-      value: cdk.Stack.of(this).region,
-    });
-
   }
 }
