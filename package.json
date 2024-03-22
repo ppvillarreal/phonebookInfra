@@ -22,6 +22,8 @@
   "dependencies": {
     "@aws-cdk/aws-apprunner": "^1.157.0",
     "@aws-cdk/aws-apprunner-alpha": "^2.125.0-alpha.0",
+    "@aws-cdk/aws-dynamodb": "^1.204.0",
+    "@aws-cdk/aws-ecs": "^1.204.0",
     "aws-cdk-lib": "2.125.0",
     "constructs": "^10.0.0",
     "source-map-support": "^0.5.21"
