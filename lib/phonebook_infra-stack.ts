@@ -69,7 +69,13 @@ export class PhonebookInfraStack extends cdk.Stack {
         "DYNAMODB_TABLE_ARN": table.tableArn,
         "SERVICE_REGION": cdk.Stack.of(this).region
       },
-      command: ['echo', 'Hello, world!']
+      command: ['echo', 'Hello, world!'],
+      portMappings: [
+        {
+          containerPort: 80,  // The port your container listens on
+          protocol: ecs.Protocol.TCP,  // The protocol (TCP or UDP)
+        }
+      ]
     });
 
     const service = new ecs.FargateService(this, 'Service', {
