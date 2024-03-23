@@ -1,11 +1,11 @@
-import { Stack, RemovalPolicy, CfnOutput, Duration, StackProps, Tags} from 'aws-cdk-lib';
+import { Stack, RemovalPolicy, CfnOutput, StackProps, Tags} from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { Repository } from 'aws-cdk-lib/aws-ecr';
 import { Role, ServicePrincipal, OpenIdConnectProvider, FederatedPrincipal, ManagedPolicy, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb';
-import { environmentConfig } from './config';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecsp from 'aws-cdk-lib/aws-ecs-patterns';
+import { environmentConfig } from './config';
 
 export class PhonebookInfraStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
