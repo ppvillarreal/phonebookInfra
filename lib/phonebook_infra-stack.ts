@@ -1,12 +1,11 @@
-import { Stack, RemovalPolicy, CfnOutput, Duration, StackProps} from 'aws-cdk-lib';
+import { Stack, RemovalPolicy, CfnOutput, Duration, StackProps, Tags} from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { Repository } from 'aws-cdk-lib/aws-ecr';
-import { Role, ServicePrincipal, OpenIdConnectProvider, FederatedPrincipal, ManagedPolicy } from 'aws-cdk-lib/aws-iam';
+import { Role, ServicePrincipal, OpenIdConnectProvider, FederatedPrincipal, ManagedPolicy, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb';
-import { Vpc, SubnetType, SecurityGroup, Peer, Port } from 'aws-cdk-lib/aws-ec2';
-import { Cluster, FargateTaskDefinition, ContainerImage, Protocol, FargateService } from 'aws-cdk-lib/aws-ecs';
-import { ApplicationLoadBalancer} from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { environmentConfig } from './config';
+import * as ecs from 'aws-cdk-lib/aws-ecs';
+import * as ecsp from 'aws-cdk-lib/aws-ecs-patterns';
 
 export class PhonebookInfraStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -24,7 +23,7 @@ export class PhonebookInfraStack extends Stack {
     // Create ECR Repository
     const ecrRepository = new Repository(this, 'PhonebookRepository', {
       removalPolicy: RemovalPolicy.DESTROY,
-    });
+    })
 
     // Define an IAM role for GitHub Actions
     const oidcProvider = new OpenIdConnectProvider(this, 'GitHubOidcProvider', {
@@ -48,82 +47,46 @@ export class PhonebookInfraStack extends Stack {
       ],
     });
 
-    // Create the Fargate ECS Service
-    const vpc = new Vpc(this, 'PhonebookAppVpc', {
-      maxAzs: 2,
-    });
-
-    const cluster = new Cluster(this, 'MyCluster', {
-      vpc,
-    });
-
-    const taskDefinition = new FargateTaskDefinition(this, 'TaskDefinition', {
-      memoryLimitMiB: 512,
-      cpu: 256,
-    });
-
-    taskDefinition.addContainer('MyContainer', {
-      image: ContainerImage.fromRegistry('nginx'),
-      environment: {
-        "DYNAMODB_TABLE_NAME": table.tableName,
-        "DYNAMODB_TABLE_ARN": table.tableArn,
-        "SERVICE_REGION": this.region
-      },
-      command: ['echo', 'Hello, world!'],
-      portMappings: [
-        {
-          containerPort: 80,
-          protocol: Protocol.TCP,
-        }
-      ]
-    });
-
-    const service = new FargateService(this, 'Service', {
-      cluster,
-      taskDefinition,
-    });
-
-    const phonebookDDBAccessRole = new Role(this, 'PhonebookDDBAccessRole', {
+    //role for container to have access to ddb table
+    const taskRole = new Role(this, 'taskRole', {
       assumedBy: new ServicePrincipal('ecs-tasks.amazonaws.com'),
       description: 'Allows container service to access DynamoDB',
     });
 
-    table.grantReadWriteData(phonebookDDBAccessRole);
-
-    const albSecurityGroup = new SecurityGroup(this, 'ALBSecurityGroup', {
-      vpc,
-      securityGroupName: 'ALBSecurityGroup',
-      description: 'Allow inbound traffic to ALB',
-    });
-
-    albSecurityGroup.addIngressRule(Peer.anyIpv4(), Port.tcp(80), 'Allow inbound HTTP traffic');
-
-    const alb = new ApplicationLoadBalancer(this, 'ALB', {
-      vpc,
-      internetFacing: true,
-      securityGroup: albSecurityGroup,
-    });
-
-    const listener = alb.addListener('Listener', {
-      port: 80,
-      open: true,
-    });
-
-    const targetGroup = listener.addTargets('ECSFargateService', {
-      port: 80,
-      targets: [service],
-      healthCheck: {
-        path: '/',
-        interval: Duration.seconds(30),
+    // Create the Fargate service with a specific tag
+    const fargateService = new ecsp.ApplicationLoadBalancedFargateService(this, 'MyWebServer', {
+      taskImageOptions: {
+        image: ecs.ContainerImage.fromRegistry('amazon/amazon-ecs-sample'),
+        taskRole: taskRole, // Attach the task role with DynamoDB access
+        environment: { // Add environment variables
+          "DYNAMODB_TABLE_NAME": table.tableName,
+          "DYNAMODB_TABLE_ARN": table.tableArn,
+          "SERVICE_REGION": this.region
+        }
       },
+      publicLoadBalancer: true
     });
+
+    // Add a tag to the task definition
+    Tags.of(fargateService.taskDefinition).add('PhonebookTableAccess', 'allowed');
+
+    // Restrict the role to be used only by tasks with the specific tag
+    const conditionalPolicy = new PolicyStatement({
+      actions: ['dynamodb:*'],
+      resources: [table.tableArn], // Specify the ARN of the specific table
+      conditions: {
+        'StringEquals': {
+          'aws:ResourceTag/PhonebookTableAccess': 'allowed'
+        }
+      }
+    });
+    
+    // Add the conditional policy to the task role
+    taskRole.addToPolicy(conditionalPolicy);
 
     new CfnOutput(this, 'RepositoryUri', {
       value: ecrRepository.repositoryUri,
     });
 
-    new CfnOutput(this, 'ALBDNSName', {
-      value: alb.loadBalancerDnsName,
-    });
   }
 }
