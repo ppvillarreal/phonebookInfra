@@ -35,10 +35,12 @@ export class PhonebookInfraStack extends Stack {
       assumedBy: new FederatedPrincipal(
         oidcProvider.openIdConnectProviderArn,
         {
-          StringEquals: {
-            'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
-            'token.actions.githubusercontent.com:sub': `repo:${environmentConfig.appGithubRepo}`,
+          "StringLike": {
+            "token.actions.githubusercontent.com:sub": "repo:ppvillarreal/phonebookApp:*"
           },
+          "StringEquals": {
+            "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+          }
         },
         'sts:AssumeRoleWithWebIdentity'
       ),
