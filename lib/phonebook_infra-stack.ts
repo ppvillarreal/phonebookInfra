@@ -37,7 +37,7 @@ export class PhonebookInfraStack extends Stack {
         {
           StringEquals: {
             'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
-            'token.actions.githubusercontent.com:sub': `repo:${environmentConfig.appGithubRepo}`,
+            'token.actions.githubusercontent.com:sub': `${environmentConfig.appGithubRepo}`,
           },
         },
         'sts:AssumeRoleWithWebIdentity'
