@@ -59,6 +59,7 @@ export class PhonebookInfraStack extends Stack {
     const fargateService = new ecsp.ApplicationLoadBalancedFargateService(this, 'MyWebServer', {
       taskImageOptions: {
         image: ecs.ContainerImage.fromEcrRepository(ecrRepository, 'latest'),
+        containerPort: 3001,
         taskRole: taskRole, // Attach the task role with DynamoDB access
         environment: { // Add environment variables
           "DYNAMODB_TABLE_NAME": table.tableName,
