@@ -55,12 +55,21 @@ export class PhonebookInfraStack extends Stack {
       description: 'Allows container service to access DynamoDB',
     });
 
+    //role to build the service in fargate
+    const executionRole = new Role(this, 'FargateExecutionRole', {
+      assumedBy: new ServicePrincipal('ecs-tasks.amazonaws.com'),
+      managedPolicies: [
+        ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonECSTaskExecutionRolePolicy'), // Includes permissions for ECR
+      ],
+    });
+
     // Create the Fargate service with a specific tag
     const fargateService = new ecsp.ApplicationLoadBalancedFargateService(this, 'MyWebServer', {
       taskImageOptions: {
         image: ecs.ContainerImage.fromEcrRepository(ecrRepository, 'latest'),
         containerPort: 3001,
         taskRole: taskRole, // Attach the task role with DynamoDB access
+        executionRole: executionRole,
         environment: { // Add environment variables
           "DYNAMODB_TABLE_NAME": table.tableName,
           "DYNAMODB_TABLE_ARN": table.tableArn,
