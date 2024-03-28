@@ -76,7 +76,10 @@ export class PhonebookInfraStack extends Stack {
           "SERVICE_REGION": this.region
         }
       },
-      publicLoadBalancer: true
+      publicLoadBalancer: true,
+      cpu: 2048,
+      memoryLimitMiB: 5096
+
     });
 
     // Add a tag to the task definition
