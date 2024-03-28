@@ -64,7 +64,7 @@ export class PhonebookInfraStack extends Stack {
     });
 
     // Create the Fargate service with a specific tag
-    const fargateService = new ecsp.ApplicationLoadBalancedFargateService(this, 'MyWebServer', {
+    const fargateService = new ecsp.ApplicationLoadBalancedFargateService(this, 'PhonebookApplication', {
       taskImageOptions: {
         image: ecs.ContainerImage.fromEcrRepository(ecrRepository, 'latest'),
         containerPort: 3001,
