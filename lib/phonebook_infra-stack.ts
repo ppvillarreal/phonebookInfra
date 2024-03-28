@@ -1,4 +1,4 @@
-import { Stack, RemovalPolicy, CfnOutput, StackProps, Tags} from 'aws-cdk-lib';
+import { Stack, RemovalPolicy, CfnOutput, StackProps, Tags, Duration} from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { Repository } from 'aws-cdk-lib/aws-ecr';
 import { Role, ServicePrincipal, OpenIdConnectProvider, FederatedPrincipal, ManagedPolicy, PolicyStatement } from 'aws-cdk-lib/aws-iam';
@@ -77,8 +77,19 @@ export class PhonebookInfraStack extends Stack {
         }
       },
       publicLoadBalancer: true,
-      cpu: 2048,
-      memoryLimitMiB: 4096
+      cpu: 256,
+      memoryLimitMiB: 1024
+    });
+
+    // Add health check to the container
+    // Set health check for the container
+    fargateService.targetGroup.configureHealthCheck({
+      path: "/health",
+      interval: Duration.seconds(30),
+      timeout: Duration.seconds(5),
+      healthyThresholdCount: 2,
+      unhealthyThresholdCount: 3,
+      port: "3001"
     });
 
     // Add a tag to the task definition
