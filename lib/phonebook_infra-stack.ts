@@ -101,7 +101,7 @@ export class PhonebookInfraStack extends Stack {
       resources: [table.tableArn], // Specify the ARN of the specific table
       conditions: {
         'StringEquals': {
-          'aws:ResourceTag/PhonebookTableAccess': 'allowed'
+          'aws:RequestTag/PhonebookTableAccess': 'allowed'
         }
       }
     });
