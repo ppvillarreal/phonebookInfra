@@ -78,8 +78,7 @@ export class PhonebookInfraStack extends Stack {
       },
       publicLoadBalancer: true,
       cpu: 2048,
-      memoryLimitMiB: 5096
-
+      memoryLimitMiB: 4096
     });
 
     // Add a tag to the task definition
