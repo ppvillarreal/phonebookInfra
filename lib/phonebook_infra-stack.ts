@@ -55,6 +55,13 @@ export class PhonebookInfraStack extends Stack {
       description: 'Allows container service to access DynamoDB',
     });
 
+    const ddbPhonebookAccess = new PolicyStatement({
+      actions: ['dynamodb:*'],
+      resources: [table.tableArn], // Specify the ARN of the specific table
+    });
+    
+    taskRole.addToPolicy(ddbPhonebookAccess);
+
     //role to build the service in fargate
     const executionRole = new Role(this, 'FargateExecutionRole', {
       assumedBy: new ServicePrincipal('ecs-tasks.amazonaws.com'),
@@ -91,23 +98,6 @@ export class PhonebookInfraStack extends Stack {
       unhealthyThresholdCount: 3,
       port: "3001"
     });
-
-    // Add a tag to the task definition
-    Tags.of(fargateService.taskDefinition).add('PhonebookTableAccess', 'allowed');
-
-    // Restrict the role to be used only by tasks with the specific tag
-    const conditionalPolicy = new PolicyStatement({
-      actions: ['dynamodb:*'],
-      resources: [table.tableArn], // Specify the ARN of the specific table
-      conditions: {
-        'StringEquals': {
-          'aws:RequestTag/PhonebookTableAccess': 'allowed'
-        }
-      }
-    });
-    
-    // Add the conditional policy to the task role
-    taskRole.addToPolicy(conditionalPolicy);
 
     new CfnOutput(this, 'RepositoryUri', {
       value: ecrRepository.repositoryUri,
