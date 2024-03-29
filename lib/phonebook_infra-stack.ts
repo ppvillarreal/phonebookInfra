@@ -49,6 +49,17 @@ export class PhonebookInfraStack extends Stack {
       ],
     });
 
+    // Add ECS deployment permissions to the GitHub Actions role
+    const ecsDeployPolicy = new PolicyStatement({
+      actions: [
+        'ecs:UpdateService',
+        'ecs:DescribeServices',
+      ],
+      resources: ['*'], // You should restrict this to the specific resources if possible
+    });
+
+    githubActionsRole.addToPolicy(ecsDeployPolicy);
+
     //role for container to have access to ddb table
     const taskRole = new Role(this, 'taskRole', {
       assumedBy: new ServicePrincipal('ecs-tasks.amazonaws.com'),
