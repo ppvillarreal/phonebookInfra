@@ -46,6 +46,7 @@ export class PhonebookInfraStack extends Stack {
       ),
       managedPolicies: [
         ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryFullAccess'),
+        ManagedPolicy.fromAwsManagedPolicyName('AmazonECS_FullAccess')
       ],
     });
 
