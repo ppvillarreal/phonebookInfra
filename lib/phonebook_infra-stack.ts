@@ -85,7 +85,7 @@ export class PhonebookInfraStack extends Stack {
     // Create the Fargate service with a specific tag
     const fargateService = new ecsp.ApplicationLoadBalancedFargateService(this, 'PhonebookApplication', {
       taskImageOptions: {
-        image: ecs.ContainerImage.fromEcrRepository(ecrRepository, 'latest'),
+        image: ecs.ContainerImage.fromEcrRepository(ecrRepository),
         containerPort: 3001,
         taskRole: taskRole, // Attach the task role with DynamoDB access
         executionRole: executionRole,
